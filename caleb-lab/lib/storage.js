@@ -23,49 +23,71 @@ module.exports = exports = {};
 exports.createNote = function(schema, note){
   if(!schema) return Promise.reject(new Error('Schema required'));
   if(!note) return Promise.reject(new Error('Note required'));
-  if(!storage[schema]) storage[schema] = {}; //take the value of schema and set it as a property of storage
-  storage[schema][note.id] = note; //storage.schema.id
-  storage['note'] = {};
-  storage['note'][note.id] = note;
-  console.log(note);
-  // return Promise.resolve(note);
+
+  //does this particular file exist
   return fs.statProm(`${persistancePath}`)
+  //if it doesn't exist, send error, 400, reject = throw err;
     .catch(err => {
       err.status = 400;
       return Promise.reject(err);
     })
     .then(() => {
-      fs.writeFileProm(`${persistancePath}/${schema}${note.id}.json`);
+      //if the catch doesnt trigger, we write a file to this directory and stringify the data
+      fs.writeFileProm(`${persistancePath}/${schema}${note.id}.json`, JSON.stringify(note))
+      .then(note => {
+        //then resolves
+        console.log(note);
+      });
     }).then(() => {
       return Promise.resolve(note);
     });
 };
 
 exports.fetchNote = function(schema, id){
-  return new Promise((resolve, reject) => {
-    if(!schema) return reject(new Error('schema required'));
-    if(!id) return reject(new Error('id require'));
+  debug('#fetchNote');
+    if(!schema) return Promise.reject(new Error('schema required'));
+    if(!id) return Promise.reject(new Error('id require'));
 
-    let schemaName = storage[schema];
-    if(!schemaName) return reject(new Error('Schema does not exist'));
+    let readFile = `${persistancePath}/${schema}${id}.json`;
 
-    let note = schemaName[id];
-    if(!note) return reject(new Error('Note doesnt exist'));
-
-    resolve(note);
-  });
+    return fs.statProm(readFile)
+      .catch(err => {
+        err.status = 400;
+        return Promise.reject(err);
+      })
+      .then(() => {
+        return fs.readFileProm(readFile);
+      }).then(data => {
+        return JSON.parse(data.toString());
+      });
 };
 
 exports.updateNote = function(schema, note){
   debug('#updateNote');
-  return new Promise((resolve, reject) => {
-    if(!schema) return reject(new Error('Schema required'));
-    if(!note) return reject(new Error('Note required'));
-    console.log(note);
-    storage[schema][note.id] = note; //storage.note.id = note.
+    if(!schema) return Promise.reject(new Error('Schema required'));
+    if(!note) return Promise.reject(new Error('Note required'));
+    // console.log(note);
+    // storage[schema][note.id] = note; //storage.note.id = note.
+    //
+    // resolve(note);
 
-    resolve(note);
-  });
+    //does this particular file exist
+    return fs.statProm(`${persistancePath}`)
+    //if it doesn't exist, send error, 400, reject = throw err;
+      .catch(err => {
+        err.status = 400;
+        return Promise.reject(err);
+      })
+      .then(() => {
+        //if the catch doesnt trigger, we write a file to this directory and stringify the data
+        fs.writeFileProm(`${persistancePath}/${schema}${note.id}.json`, JSON.stringify(note))
+        .then(note => {
+          //then resolves
+          console.log(note);
+        });
+      }).then(() => {
+        return Promise.resolve(note);
+      });
 };
 
 exports.deleteNote = function(schema, id){
@@ -73,8 +95,8 @@ exports.deleteNote = function(schema, id){
   return new Promise((resolve, reject) => {
     if(!schema) return reject(new Error('schema required'));
     if(!id) return reject(new Error('Note id require'));
-    delete storage[schema][id];
+    // delete storage[schema][id];
 
-    resolve();
+    // resolve();
   });
 };
