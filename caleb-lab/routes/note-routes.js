@@ -84,7 +84,7 @@ router.delete('/api/note', (req, res) =>{
   console.log('deleting');
   storage.deleteNote('note', req.url.query.id)
   .then(() => {
-    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.writeHead(204, {'Content-Type': 'application/json'});
     res.end();
   }).catch(err =>{
     console.error(err);

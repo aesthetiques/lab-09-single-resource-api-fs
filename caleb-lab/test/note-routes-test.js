@@ -122,7 +122,7 @@ describe('server module', function(){
             .del(`/api/note?id=${testDeleteNote.id}`)
             .end((err, res) => {
               if(err) console.error(err.message)
-              expect(res.status).to.equal(200)
+              expect(res.status).to.equal(204)
               done()
             })
           })
