@@ -1,85 +1,144 @@
-'use strict';
+'use strict'
 
-const Note = require('../model/note');
-const Router = require('../lib/router.js');
-const storage = require('../lib/storage.js');
-const server = require('../server.js');
+const server = require('../server.js')
 
-const debug = require('debug')('http:server');
-const http = require('chai-http');
-const chai = require('chai');
-const expect = chai.expect;
+const debug = require('debug')('http:server')
+const http = require('chai-http')
+const chai = require('chai')
+const expect = chai.expect
 
-chai.use(http);
+chai.use(http)
 
 describe('server module', function(){
-  before(done => {
-    server.listen(3000);
-    done();
-  });
-  after(done => {
-    server.close();
-    done();
-  });
-
   describe('rest stages', function(){
-    describe('post', function(){
+    before(done => {
+      server.listen(3000)
+      done()
+    })
+    let testNote
+    before(done => {
+      chai.request(server)
+      .post('/api/note')
+      .send({'name': 'ok corral', 'date': 'a long time ago', 'id': '7f5dc40c-3042-42e3-8f06-f70b09f3714b'})
+      .end((err, res) => {
+        if(err) console.error(err)
+        testNote = JSON.parse(res.text.toString())
+        done()
+      })
+    })
+    afterEach(done => {
+      chai.request(server)
+      .del(`/api/note?id=${testNote.id}`)
+      .end((err, res) => {
+        if(err) console.error(err.message)
+      })
+      server.close()
+      done()
+    })
+
+    describe('post', () => {
       it('should run POST, respond with a 200, and make an object', done => {
         chai.request(server)
         .post('/api/note')
         .send({'name': 'ok corral', 'date': 'a long time ago'})
         .end((err, res) => {
-          if(err) console.error(err);
-          expect(res.status).to.equal(200);
-          console.log('working', res.status);
-          done();
-      });
-      });
-      });
-      });
-      it('should respond with a 404', done => {
-        chai.request(server)
-        .post('/wat')
-        .send({'name': 'ok corral', 'date': 'a long time ago'})
-        .end((err, res) => {
-          expect(res.status).to.equal(404);
-          console.log('[successful] fail', res.status);
-          done();
-        });
-      });
-    });
-    // describe('GET', function(){
-    //   // before(done => {
-    //   //   chai.request(server)
-    //   //   .post('/api/note')
-    //   //   .send({'name': 'ok corral', 'date': 'a long time ago', 'id': '7f5dc40c-3042-42e3-8f06-f70b09f3714b'})
-    //   //   .end((err, res) => {
-    //   //     console.log();
-    //   //     if(err) console.error(err);
-    //   //     done();
-    //   //   });
-    //   // });
-    //   // .send({'name': 'ok corral', 'date': 'a long time ago', 'id': '7f5dc40c-3042-42e3-8f06-f70b09f3714b'})
-    //
-    //   describe('get after post has completed?', function(){
-    //     let getNote = {};
-    //     it('should run a GET and respond with a 200 - success', function(){
-    //       chai.request(server)
-    //       .post('/api/note')
-    //       .send({'getNote.name': 'ok corral', 'getNote.date': 'a long time ago'})
-    //       .end((err, res) => {
-    //         if(err) console.error(err);
-    //         console.log('working', res.status);
-    //       });
-    //       console.log('GET working');
-    //       console.log(getNote.id);
-    //       chai.request(server)
-    //       .get(`/api/note?id=${getNote.id}`)
-    //       .end((err, res) => {
-    //         if(err) console.error(err);
-    //         expect(res.status).to.equal(200);
-    //         done();
-  //       });
-  //       });
-  //   });
-  // });
+          if(err) console.error(err)
+          expect(res.status).to.equal(200)
+          done()
+        })
+      })
+    })
+    it('should respond with a 404', done => {
+      chai.request(server)
+      .post('/wat')
+      .send({'name': 'ok corral', 'date': 'a long time ago'})
+      .end((err, res) => {
+        expect(res.status).to.equal(404)
+        done()
+      })
+    })
+
+    describe('GET', () => {
+      describe('GET request', () => {
+        it('should run a GET and respond with a 200 - success', done => {
+          chai.request(server)
+          .get(`/api/note?id=${testNote.id}`)
+          .end((err, res) => {
+            if(err) console.error(err.message)
+            expect(res.status).to.equal(200)
+            done()
+          })
+        })
+        it('should run a GET and respond with a 404 - not found', done => {
+          chai.request(server)
+          .get(`/api/note?id=blargblarg`)
+          .end((err, res) => {
+            if(err) console.error(err.message)
+            expect(res.status).to.equal(404)
+            done()
+          })
+        })
+      })
+    })
+
+    describe('PUT', () => {
+      describe('should edit a previously made note', () => {
+        it('should change the value of the note', done => {
+          chai.request(server)
+          .put(`/api/note?id=${testNote.id}`)
+          .send({'name': 'magic the gathering', 'date': 'any day now', 'id': testNote.id})
+          .end((err, res) => {
+            if(err) console.error(err.message)
+            expect(res.status).to.equal(200)
+            done()
+          })
+        })
+      })
+
+      describe('DELETE', function(){
+        let testDeleteNote
+        before(done => {
+          chai.request(server)
+          .post('/api/note')
+          .send({'name': 'ok corral', 'date': 'a long time ago', 'id': '7f5dc40c-3042-42e3-8f06-f70b09f3714b'})
+          .end((err, res) => {
+            if(err) console.error(err)
+            testDeleteNote = JSON.parse(res.text.toString())
+            done()
+          })
+        })
+        after(done => {
+          chai.request(server)
+          .del(`/api/note?id=${testDeleteNote.id}`)
+          .end(err => {
+            if(err) console.error(err.message)
+            server.close()
+            done()
+          })
+        })
+        describe('should delete a note', () => {
+          it('should delete a note', done => {
+            chai.request(server)
+            .del(`/api/note?id=${testDeleteNote.id}`)
+            .end((err, res) => {
+              if(err) console.error(err.message)
+              expect(res.status).to.equal(200)
+              done()
+            })
+          })
+
+          it('shouldn\'t be able to find a deleted note', done => {
+            chai.request(server)
+            .get(`/api/note?id=${testDeleteNote.id}`)
+            .end((err, res) => {
+              if(err) console.error(err.message)
+              expect(res.status).to.equal(404)
+              done()
+            })
+          })
+        })
+
+      })
+    })
+  })
+})

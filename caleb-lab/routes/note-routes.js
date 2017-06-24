@@ -22,7 +22,7 @@ const fs = Promise.promisifyAll(require('fs'), {suffix: 'Prom'});
 //   })
 //   .catch(console.error);
 module.exports = function(router){
-  
+
 router.get('/api/note', (req, res) => {
   debug('GET /api/note');
   console.log(req.body);
